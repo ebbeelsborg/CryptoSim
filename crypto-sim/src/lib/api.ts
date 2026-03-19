@@ -1,10 +1,21 @@
 import { API_URL } from './constants.js';
 
+const FETCH_TIMEOUT_MS = 5000;
+
 export async function fetchPrices() {
-  const res = await fetch(`${API_URL}/api/prices`);
-  if (!res.ok) throw new Error(await res.text());
-  const { prices } = await res.json();
-  return prices;
+  const url = `${API_URL || ''}/api/prices`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(await res.text());
+    const { prices } = await res.json();
+    return prices;
+  } catch (e) {
+    clearTimeout(timeout);
+    throw e;
+  }
 }
 
 export async function followWallet(userId: string, address: string) {

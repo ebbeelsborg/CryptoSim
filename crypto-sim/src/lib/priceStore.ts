@@ -1,6 +1,7 @@
 /**
  * Price store - fetches from API, updates from WebSocket
  */
+import { writable } from 'svelte/store';
 import { fetchPrices } from './api.js';
 import { subscribe } from './websocket.js';
 
@@ -13,13 +14,13 @@ async function fetchFromApi() {
 }
 
 export function createPriceStore() {
-  let prices = $state<Record<string, number>>({});
+  const prices = writable<Record<string, number>>({});
 
   async function load() {
     const list = await fetchFromApi();
     const next: Record<string, number> = {};
     for (const p of list) next[p.symbol] = p.priceUsd;
-    prices = next;
+    prices.set(next);
   }
 
   const unsub = subscribe((event, payload) => {
@@ -27,13 +28,11 @@ export function createPriceStore() {
     const { prices: list } = payload as { prices: Array<{ symbol: string; priceUsd: number }> };
     const next: Record<string, number> = {};
     for (const p of list ?? []) next[p.symbol] = p.priceUsd;
-    prices = next;
+    prices.set(next);
   });
 
   return {
-    get prices() {
-      return prices;
-    },
+    prices,
     load,
     destroy: unsub,
   };

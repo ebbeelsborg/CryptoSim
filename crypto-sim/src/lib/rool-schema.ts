@@ -4,49 +4,72 @@
 import type { RoolChannel } from '@rool-dev/sdk';
 import type { ReactiveChannel } from '@rool-dev/svelte';
 
+const USER_FIELDS = [
+  { name: 'type', type: { kind: 'literal' as const, value: 'user' } },
+  { name: 'name', type: { kind: 'string' as const } },
+  { name: 'cash_balance', type: { kind: 'number' as const } },
+];
+
+const POSITION_FIELDS = [
+  { name: 'type', type: { kind: 'literal' as const, value: 'position' } },
+  { name: 'userId', type: { kind: 'ref' as const } },
+  { name: 'tokenSymbol', type: { kind: 'string' as const } },
+  { name: 'amount', type: { kind: 'number' as const } },
+  { name: 'avgEntryPrice', type: { kind: 'number' as const } },
+];
+
+const TRADE_FIELDS = [
+  { name: 'type', type: { kind: 'literal' as const, value: 'trade' } },
+  { name: 'userId', type: { kind: 'ref' as const } },
+  { name: 'tokenSymbol', type: { kind: 'string' as const } },
+  { name: 'side', type: { kind: 'enum' as const, values: ['buy', 'sell'] } },
+  { name: 'amount', type: { kind: 'number' as const } },
+  { name: 'price', type: { kind: 'number' as const } },
+  { name: 'timestamp', type: { kind: 'number' as const } },
+];
+
+const FOLLOWED_WALLET_FIELDS = [
+  { name: 'type', type: { kind: 'literal' as const, value: 'followedWallet' } },
+  { name: 'address', type: { kind: 'string' as const } },
+  { name: 'userId', type: { kind: 'ref' as const } },
+];
+
+const WHALE_EVENT_FIELDS = [
+  { name: 'type', type: { kind: 'literal' as const, value: 'whaleEvent' } },
+  { name: 'walletAddress', type: { kind: 'string' as const } },
+  { name: 'tokenSymbol', type: { kind: 'string' as const } },
+  { name: 'amount', type: { kind: 'number' as const } },
+  { name: 'eventType', type: { kind: 'enum' as const, values: ['buy', 'sell', 'transfer'] } },
+  { name: 'timestamp', type: { kind: 'number' as const } },
+  { name: 'signature', type: { kind: 'string' as const } },
+];
+
+const NOTIFICATION_FIELDS = [
+  { name: 'type', type: { kind: 'literal' as const, value: 'notification' } },
+  { name: 'userId', type: { kind: 'ref' as const } },
+  { name: 'message', type: { kind: 'string' as const } },
+  { name: 'read', type: { kind: 'boolean' as const } },
+  { name: 'timestamp', type: { kind: 'number' as const } },
+];
+
 export async function ensureSchema(channel: RoolChannel | ReactiveChannel) {
   const schema = channel.getSchema();
-  if (schema.user) return; // Schema already set up
 
-  await channel.createCollection('user', [
-    { name: 'name', type: { kind: 'string' } },
-    { name: 'cash_balance', type: { kind: 'number' } },
-  ]);
+  // Create or alter collections to include type field (required for createObject)
+  const collections = [
+    ['user', USER_FIELDS],
+    ['position', POSITION_FIELDS],
+    ['trade', TRADE_FIELDS],
+    ['followedWallet', FOLLOWED_WALLET_FIELDS],
+    ['whaleEvent', WHALE_EVENT_FIELDS],
+    ['notification', NOTIFICATION_FIELDS],
+  ] as const;
 
-  await channel.createCollection('position', [
-    { name: 'userId', type: { kind: 'ref' } },
-    { name: 'tokenSymbol', type: { kind: 'string' } },
-    { name: 'amount', type: { kind: 'number' } },
-    { name: 'avgEntryPrice', type: { kind: 'number' } },
-  ]);
-
-  await channel.createCollection('trade', [
-    { name: 'userId', type: { kind: 'ref' } },
-    { name: 'tokenSymbol', type: { kind: 'string' } },
-    { name: 'side', type: { kind: 'enum', values: ['buy', 'sell'] } },
-    { name: 'amount', type: { kind: 'number' } },
-    { name: 'price', type: { kind: 'number' } },
-    { name: 'timestamp', type: { kind: 'number' } },
-  ]);
-
-  await channel.createCollection('followedWallet', [
-    { name: 'address', type: { kind: 'string' } },
-    { name: 'userId', type: { kind: 'ref' } },
-  ]);
-
-  await channel.createCollection('whaleEvent', [
-    { name: 'walletAddress', type: { kind: 'string' } },
-    { name: 'tokenSymbol', type: { kind: 'string' } },
-    { name: 'amount', type: { kind: 'number' } },
-    { name: 'eventType', type: { kind: 'enum', values: ['buy', 'sell', 'transfer'] } },
-    { name: 'timestamp', type: { kind: 'number' } },
-    { name: 'signature', type: { kind: 'string' } },
-  ]);
-
-  await channel.createCollection('notification', [
-    { name: 'userId', type: { kind: 'ref' } },
-    { name: 'message', type: { kind: 'string' } },
-    { name: 'read', type: { kind: 'boolean' } },
-    { name: 'timestamp', type: { kind: 'number' } },
-  ]);
+  for (const [name, fields] of collections) {
+    if (schema[name]) {
+      await channel.alterCollection(name, fields);
+    } else {
+      await channel.createCollection(name, fields);
+    }
+  }
 }

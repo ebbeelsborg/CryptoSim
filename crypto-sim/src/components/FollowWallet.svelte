@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ReactiveChannel, ReactiveWatch } from '@rool-dev/svelte';
   import { generateId } from '@rool-dev/svelte';
-  import { followWallet, unfollowWallet, getFollowedWallets, syncFollowedWallets } from '../lib/api.js';
+  import { followWallet, unfollowWallet, syncFollowedWallets } from '../lib/api.js';
 
   interface Props {
     channel: ReactiveChannel;

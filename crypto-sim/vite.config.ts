@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   base: './',
   plugins: [tailwindcss(), svelte()],
+  optimizeDeps: {
+    exclude: ['@rool-dev/svelte', '@rool-dev/sdk'],
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:3001',

@@ -21,7 +21,6 @@
   let userId = $state<string | null>(null);
   let tab = $state<'dashboard' | 'trade' | 'whale' | 'follow'>('dashboard');
   let priceStore = $state<ReturnType<typeof createPriceStore> | null>(null);
-
   $effect(() => {
     if (rool.authenticated && rool.spaces && !channel) {
       openSpace();
@@ -44,8 +43,8 @@
     userId = await initSpace(channel);
 
     const store = createPriceStore();
-    await store.load();
     priceStore = store;
+    store.load(); // Non-blocking: don't await — backend may not exist when published
   }
 
   $effect(() => {
@@ -53,11 +52,7 @@
   });
 </script>
 
-{#if rool.authenticated === undefined}
-  <div class="min-h-dvh flex items-center justify-center bg-slate-50">
-    <p class="text-slate-500">Loading...</p>
-  </div>
-{:else if rool.authenticated === false}
+{#if rool.authenticated !== true}
   <Splash appName={APP_NAME} onLogin={() => rool.login(APP_NAME)} />
 {:else}
   <div class="min-h-dvh flex flex-col bg-slate-50">
@@ -104,9 +99,9 @@
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 space-y-6">
               {#if tab === 'dashboard'}
-                <Dashboard channel={channel} userId={userId} prices={priceStore?.prices ?? {}} />
+                <Dashboard channel={channel} userId={userId} prices={priceStore ? $priceStore.prices : {}} />
               {:else if tab === 'trade'}
-                <TradePanel channel={channel} userId={userId} prices={priceStore?.prices ?? {}} />
+                <TradePanel channel={channel} userId={userId} prices={priceStore ? $priceStore.prices : {}} />
               {:else if tab === 'whale'}
                 <WhaleFeed {channel} />
               {:else}

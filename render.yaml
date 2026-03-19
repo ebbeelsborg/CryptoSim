@@ -1,0 +1,15 @@
+# Render Blueprint - CryptoSim Backend
+# Deploy: Connect this repo to Render, or use "New > Blueprint" and point to this file
+
+services:
+  - type: web
+    name: cryptosim-backend
+    runtime: node
+    rootDir: backend
+
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+
+    envVars:
+      - key: NODE_VERSION
+        value: 20
